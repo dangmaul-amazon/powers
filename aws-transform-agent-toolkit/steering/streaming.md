@@ -1,19 +1,19 @@
 ---
 inclusion: auto
 name: streaming
-description: "Opt-in concurrent streaming for AWS Transform orchestrators and subagents (StreamingConfig, the AG-UI/A2A stream, the subagent relay tools)"
+description: "Concurrent streaming for AWS Transform orchestrators and subagents: on by default for scaffolded agents, an SDK-level switch (StreamingConfig, the AG-UI/A2A stream, the subagent relay tools)"
 ---
 
 # Streaming
 
-AWS Transform agents answer in two ways. By default a turn is **buffered**: the agent runs to
-completion and the final answer is persisted and delivered. **Streaming** is opt-in: the agent's
-turn is emitted live as a stream of events (reasoning, tool calls, text) while it runs, and several
-users of the same orchestrator can have their turns run concurrently.
+AWS Transform agents answer in two ways. In a **buffered** turn the agent runs to completion and the
+final answer is persisted and delivered. With **streaming** the agent's turn is emitted live as a
+stream of events (reasoning, tool calls, text) while it runs, and several users of the same
+orchestrator can have their turns run concurrently.
 
-New agents are scaffolded with streaming on. It stays a switch: you can turn it off for a simple
-request/response agent, and then nothing in this file applies and the agent behaves exactly as the
-buffered examples in `orchestrator-patterns.md`.
+At the SDK level streaming is off until you pass a `StreamingConfig`; this power scaffolds new agents
+with it on (below). It stays a switch: you can turn it off for a simple request/response agent, and
+then nothing in this file applies and the agent behaves exactly as a buffered agent.
 
 ## When to turn it off
 
@@ -99,8 +99,10 @@ instead.
 
 A subagent can stream too, but only an async subagent is `StreamingCapable`: build it with
 `create_default_async_subagent` (the sample `simple_subagent_cli.py` does this under
-`--concurrent-streaming`). An orchestrator reaches a streaming subagent through one of two opt-in
-tools, added via `custom_tools`:
+`--concurrent-streaming`). The subagent's own server must also be given a `StreamingConfig` and its
+agent card must set `capabilities.streaming: true`; otherwise the agentic API's ConverseStream
+rejects the relay with `ValidationException: Streaming is not supported for the requested agent`. An
+orchestrator reaches a streaming subagent through one of two opt-in tools, added via `custom_tools`:
 
 - `send_message_to_subagent_and_relay` — streams the subagent's answer to the user **as the
   orchestrator's own final answer**, and ends the orchestrator's turn. Use it when the subagent's

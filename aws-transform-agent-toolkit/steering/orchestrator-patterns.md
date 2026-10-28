@@ -117,7 +117,7 @@ Use the simplified `AgentRuntimeServer` with a custom agent factory:
 import argparse
 import logging
 from agent_builder_sdk.server.agent_runtime_server import AgentRuntimeServer
-from agent_builder_sdk.agent_factory import create_default_orchestrator
+from agent_builder_sdk.agent_factory import create_default_async_orchestrator
 from agent_builder_sdk.streaming import StreamingConfig
 from agent_builder_sdk.utils import get_prompt_with_name
 
@@ -152,13 +152,17 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    # Create agent factory with default configuration
-    def agent_factory(mcp_client, storage_dir=None):
-        return create_default_orchestrator(
+    # Create agent factory with default configuration. Streaming needs an async orchestrator and a
+    # factory that forwards conversation_repository and memory_manager, so the pooled per-user
+    # agents share one history and memory store (the server validates this at startup).
+    def agent_factory(mcp_client, storage_dir=None, **kwargs):
+        return create_default_async_orchestrator(
             mcp_client=mcp_client,
             storage_dir=storage_dir,
             system_prompt=get_prompt_with_name("test_orchestrator_prompt"),
             model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            conversation_repository=kwargs.get("conversation_repository"),
+            memory_manager=kwargs.get("memory_manager"),
         )
 
     logger.info("Starting Agent Runtime Server...")
